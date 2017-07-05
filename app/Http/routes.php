@@ -14,3 +14,17 @@
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::group(array('prefix' => 'students'), function() {
+    Route::post('register','StudentController@register');
+    Route::get('view','StudentController@view');
+    Route::get('profile/{id}','StudentController@profile');
+    Route::put('update/{id}','StudentController@update');
+    Route::delete('delete/{id}','StudentController@delete');
+    Route::get('search','StudentController@search');
+
+
+});
+
+
+
