@@ -95,6 +95,13 @@ return [
         'attribute-name' => [
             'rule-name' => 'custom-message',
         ],
+        'email' => [
+            'unique' => 'This email already exist ! please enter new one',
+            'email' => 'Your email address is invalid email'
+        ],
+        'username' => [
+            'alpha' => 'Username contains only charecter'
+        ],
     ],
 
     /*

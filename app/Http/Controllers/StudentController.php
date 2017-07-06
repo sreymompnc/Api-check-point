@@ -7,6 +7,9 @@ use Illuminate\Http\Request;
 use App\Http\Requests;
 use App\Students;
 use Crypt;
+use Illuminate\Support\Facades\Validator;// to use validator
+use Illuminate\Foundation\Validation;// to use validation message
+
 
 class StudentController extends Controller
 {
@@ -35,6 +38,12 @@ class StudentController extends Controller
 
     }
 
+    /**
+     * This method is use to view profile student specific by ID
+     * @param $id
+     * @return \Illuminate\Http\JsonResponse
+     *
+     */
     public function profile($id){
         $studentProfile = \DB::table('students')->select('*')->where('id', '=',$id)->get();
         return response()->json(array('status'=> 'True','student profile' => $studentProfile ));
@@ -49,25 +58,42 @@ class StudentController extends Controller
      */
     public function register(Request $request)
     {
-        $student = new Students();
-        $encrypted = Crypt::encrypt($request->input('password'));
+        $validator = Validator::make($request->all(), [
+            'username' => 'required|Alpha',
+            'email' => 'required|email|unique:students',
+            'phone' => 'required',
+            'address' => 'required',
+            'password' => 'required|min:5',
 
-        $student->username = $request->input('username');
-        $student->email = $request->input('email');
-        $student->phone = $request->input('phone');
-        $student->address = $request->input('address');
-        $student->status = '1';
-        $student->password = $encrypted;
-
-        $student->save();
-        return response()->json(array('status' => 'True', 'message' => 'Student is registered successfully'));
+        ]);
 
 
+        if ($validator->fails()) {
+            return response()->json(array(
+                'status' => 'False',
+                'message' => "Student's registration is fail!",
+                'validation' =>  $validator->errors()
+        ));
+        }else{
+
+            $student = new Students();
+            $encrypted = Crypt::encrypt($request->input('password'));
+
+            $student->username = $request->input('username');
+            $student->email = $request->input('email');
+            $student->phone = $request->input('phone');
+            $student->address = $request->input('address');
+            $student->status = '1';
+            $student->password = $encrypted;
+
+            $student->save();
+
+            return response()->json(array('status' => 'True', 'message' => 'Student is registered successfully'));
+
+        }
 
 
     }
-
-
 
     /**
      * Update the specified resource in storage.
@@ -79,17 +105,36 @@ class StudentController extends Controller
     public function update(Request $request, $id)
     {
 
-        $student = Students::find($id);
+        $validator = Validator::make($request->all(), [
+            'username' => 'required|Alpha',
+            'email' => "required|email|unique:students,Email,$id",
+            'phone' => 'required',
+            'address' => 'required',
+            'password' => 'required|min:5',
 
-        $student->username = $request->input('username');
-        $student->email = $request->input('email');
-        $student->phone = $request->input('phonne');
-        $student->address = $request->input('address');
-        $student->status = $request->input('status');
-        $student->password = $request->input('password');
-        $student->save();
+        ]);
 
-        return response()->json(array('status'=> 'True','message' => 'Student is updated successfully','New student' => $request->all() ));
+
+        if ($validator->fails()) {
+            return response()->json(array(
+                'status' => 'False',
+                'message' => "Student's updating is fail!",
+                'validation' =>  $validator->errors()
+            ));
+        }else{
+
+            $student = Students::find($id);
+
+            $student->username = $request->input('username');
+            $student->email = $request->input('email');
+            $student->phone = $request->input('phonne');
+            $student->address = $request->input('address');
+            $student->status = $request->input('status');
+            $student->password = $request->input('password');
+            $student->save();
+
+            return response()->json(array('status'=> 'True','message' => 'Student is updated successfully','New student data' => $request->all() ));
+        }
     }
 
     /**
@@ -100,10 +145,19 @@ class StudentController extends Controller
      */
     public function delete($id)
     {
-        \DB::table('students')->where('id','=',$id)->delete();
-        return response()->json(array('status' => 'True','message' => 'Student is deleted successfully'));
+        $result = \DB::table('students')->where('id','=',$id)->delete();
+        if($result){
+            return response()->json(array('status' => 'True','message' => 'Student is deleted successfully'));
+        }else{
+            return response()->json(array('status' => 'False','message' => "Student's deleting is deleted successfully"));
+        }
     }
 
+    /**
+     * This method is used to search student base on their username, address and status
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function search(Request $request){
         $username = $request->input('username');
         $add = $request->input('address');
@@ -115,6 +169,12 @@ class StudentController extends Controller
             ['status','=',$status],
         ])->get();
 
-        return response()->json(array('status' => 'True','result of searching' =>$result ));
+        if($result){
+            return response()->json(array('status' => 'True','result of searching' =>$result ));
+        }else{
+            return response()->json(array('status' => 'False','result of searching' => 'Not match' ));
+        }
     }
+
+
 }
