@@ -22,7 +22,7 @@ Route::group(array('prefix' => 'students'), function() {
     Route::put('update/{id}','StudentController@update');
     Route::delete('delete/{id}','StudentController@delete');
     Route::get('search','StudentController@search');
-
+    Route::post('login','StudentController@login');
 
 });
 
