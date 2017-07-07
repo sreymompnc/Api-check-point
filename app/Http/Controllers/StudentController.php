@@ -84,8 +84,8 @@ class StudentController extends Controller
         if ($validator->fails()) {
             return response()->json(array(
                 'status' => 'False',
-                'message' => "Registration fail!",
-                'validation' => $validator->errors()
+                'message' => "Register fail!",
+                'Error' => $validator->errors()
             ));
         } else {
 
@@ -100,7 +100,7 @@ class StudentController extends Controller
 
             $student->save();
 
-            return response()->json(array('Status' => 'True', 'Message' => 'Registration successfully'));
+            return response()->json(array('Status' => 'True', 'Message' => 'Register successfully'));
 
         }
 
@@ -130,7 +130,7 @@ class StudentController extends Controller
             return response()->json(array(
                 'Status' => 'False',
                 'Message' => "Edit fail!",
-                'Validation' => $validator->errors()
+                'Error' => $validator->errors()
             ));
         } else {
 
@@ -230,7 +230,7 @@ class StudentController extends Controller
             }
 
         } else {
-            return response()->json(array('Status' => 'False', 'Message' => 'Login fail!', 'Validation' => $validator->errors()));
+            return response()->json(array('Status' => 'False', 'Message' => 'Login fail!', 'Error' => $validator->errors()));
         }
     }
 
