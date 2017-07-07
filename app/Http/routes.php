@@ -17,12 +17,12 @@ Route::get('/', function () {
 
 Route::group(array('prefix' => 'students'), function() {
     Route::post('register','StudentController@register');
+    Route::post('login','StudentController@login');
     Route::get('view','StudentController@view');
     Route::get('profile/{id}','StudentController@profile');
-    Route::put('update/{id}','StudentController@update');
+    Route::put('edit/{id}','StudentController@edit');
     Route::delete('delete/{id}','StudentController@delete');
     Route::get('search','StudentController@search');
-    Route::post('login','StudentController@login');
 
 });
 

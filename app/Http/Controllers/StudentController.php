@@ -8,6 +8,8 @@ use App\Http\Requests;
 use App\Students;
 use Illuminate\Support\Facades\Validator; // to use validator
 use Illuminate\Foundation\Validation; // to use validation message
+use Exception;
+use Illuminate\Support\Facades\Response;
 
 
 class StudentController extends Controller
@@ -26,6 +28,7 @@ class StudentController extends Controller
     public function index()
     {
         //
+
     }
 
     /**
@@ -35,7 +38,11 @@ class StudentController extends Controller
     public function view()
     {
         $studentsData = \DB::table('students')->get();
-        return response()->json(array('status' => 'True', 'students' => $studentsData));
+        if ($studentsData) {
+            return response()->json(array('Status' => 'True', 'Students' => $studentsData));
+        } else {
+            return response()->json(array('Status' => 'False', 'Message' => 'No data in database'), 404);
+        }
 
     }
 
@@ -48,7 +55,11 @@ class StudentController extends Controller
     public function profile($id)
     {
         $studentProfile = \DB::table('students')->select('*')->where('id', '=', $id)->get();
-        return response()->json(array('status' => 'True', 'student profile' => $studentProfile));
+        if ($studentProfile) {
+            return response()->json(array('Status' => 'True', "Student's profile" => $studentProfile));
+        } else {
+            return response()->json(array('Status' => 'False', 'Message' => 'Invalid id'), 404);
+        }
 
     }
 
@@ -73,7 +84,7 @@ class StudentController extends Controller
         if ($validator->fails()) {
             return response()->json(array(
                 'status' => 'False',
-                'message' => "Student's registration is fail!",
+                'message' => "Registration fail!",
                 'validation' => $validator->errors()
             ));
         } else {
@@ -89,7 +100,7 @@ class StudentController extends Controller
 
             $student->save();
 
-            return response()->json(array('status' => 'True', 'message' => 'Student is registered successfully'));
+            return response()->json(array('Status' => 'True', 'Message' => 'Registration successfully'));
 
         }
 
@@ -103,38 +114,42 @@ class StudentController extends Controller
      * @param  int $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function edit(Request $request, $id)
     {
 
         $validator = Validator::make($request->all(), [
             'username' => 'required|regex:/^[\pL\s\-]+$/u',
-            'email' => "required|email|unique:students,Email,$id",
+            'email' => "required|email|unique:students,email,$id",
             'phone' => 'required',
             'address' => 'required',
             'password' => 'required|min:5',
 
         ]);
-
-
+        // Validator is true
         if ($validator->fails()) {
             return response()->json(array(
-                'status' => 'False',
-                'message' => "Student's updating is fail!",
-                'validation' => $validator->errors()
+                'Status' => 'False',
+                'Message' => "Edit fail!",
+                'Validation' => $validator->errors()
             ));
         } else {
 
             $student = Students::find($id);
+            if ($student) {
+                $student->username = $request->input('username');
+                $student->email = $request->input('email');
+                $student->phone = $request->input('phone');
+                $student->address = $request->input('address');
+                $student->status = '1';
+                $student->password = sha1($request->input('password'));
+                $student->save();
 
-            $student->username = $request->input('username');
-            $student->email = $request->input('email');
-            $student->phone = $request->input('phonne');
-            $student->address = $request->input('address');
-            $student->status = $request->input('status');
-            $student->password = $request->input('password');
-            $student->save();
+                $studentNewData = \DB::table('students')->select('*')->where('id','=',$id)->get();
 
-            return response()->json(array('status' => 'True', 'message' => 'Student is updated successfully', 'New student data' => $request->all()));
+                return response()->json(array('Status' => 'True', 'Message' => 'Edit successfully', 'New student data' => $studentNewData));
+            } else {
+                return response()->json(array('Status' => 'False', 'Message' => 'Invalid id'), 404);
+            }
         }
     }
 
@@ -146,12 +161,17 @@ class StudentController extends Controller
      */
     public function delete($id)
     {
-        $result = \DB::table('students')->where('id', '=', $id)->delete();
-        if ($result) {
-            return response()->json(array('status' => 'True', 'message' => 'Student is deleted successfully'));
+        if (Students::find($id)) {
+            $result = \DB::table('students')->where('id', '=', $id)->delete();
+            if ($result) {
+                return response()->json(array('Status' => 'True', 'Message' => 'Delete successfully'));
+            } else {
+                return response()->json(array('Status' => 'False', 'Message' => "Delete fail!"));
+            }
         } else {
-            return response()->json(array('status' => 'False', 'message' => "Student's deleting is deleted successfully"));
+            return response()->json(array('Status' => 'False', 'Message' => "Invalid id"), 404);
         }
+
     }
 
     /**
@@ -162,19 +182,19 @@ class StudentController extends Controller
     public function search(Request $request)
     {
         $username = $request->input('username');
-        $add = $request->input('address');
+        $address = $request->input('address');
         $status = $request->input('status');
 
         $result = \DB::table('students')->where([
             ['username', '=', $username],
-            ['address', '=', $add],
+            ['address', '=', $address],
             ['status', '=', $status],
         ])->get();
 
         if ($result) {
-            return response()->json(array('status' => 'True', 'result of searching' => $result));
+            return response()->json(array('Status' => 'True', "Student's information" => $result));
         } else {
-            return response()->json(array('status' => 'False', 'result of searching' => 'Not match'));
+            return response()->json(array('Status' => 'False', "Student's information" => "Information doesn't match"));
         }
     }
 
@@ -198,17 +218,19 @@ class StudentController extends Controller
                 ['password', '=', sha1($request->input('password'))],
             ])->get();
             // To check if login is success or fail
-            if ($student) {
+
+            if (count($student) > 0) {
                 return response()->json(array(
                     'status' => 'True',
                     'message' => 'Login successfully',
                     "Student's information" => $student
                 ));
             } else {
-                return response()->json(array('status' => 'False', 'message' => 'Login fail!'));
+                return response()->json(array('Status' => 'False', 'Message' => 'Invalid email or password!'), 404);
             }
+
         } else {
-            return response()->json(array('status' => 'False', 'validation' => $validator->errors()));
+            return response()->json(array('Status' => 'False', 'Message' => 'Login fail!', 'Validation' => $validator->errors()));
         }
     }
 
